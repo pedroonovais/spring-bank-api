@@ -45,21 +45,23 @@ public class AccountController {
 
     @GetMapping("{id}")
     public Account get(@PathVariable long id){
-        log.info("Buscando categoria " + id);
+        log.info("Buscando conta " + id);
         return getAccount(id);
     }
 
     @GetMapping("cpf/{cpf}")
     public Account getByCpf(@PathVariable long cpf){
-        log.info("Buscando categoria " + cpf);
+        log.info("Buscando conta " + cpf);
         return getAccountByCpf(cpf);
     }
 
     @DeleteMapping("{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void destroy(@PathVariable Long id) {
-        log.info("Apagando conta " + id);
-        repository.remove(getAccount(id));
+        log.info("Alterando status da conta para inativa " + id);
+        
+        var account = getAccount(id);
+        account.setActive("n");
     }
 
     @PutMapping("{id}")

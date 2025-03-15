@@ -58,6 +58,10 @@ public class Account {
         return active;
     }
 
+    public void setActive(String active) {
+        this.active = active;
+    }
+
     public String getTypeAccount() {
         return typeAccount;
     }
