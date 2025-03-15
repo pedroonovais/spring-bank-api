@@ -54,6 +54,10 @@ public class Account {
         return balance;
     }
 
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
     public String isActive() {
         return active;
     }
