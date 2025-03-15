@@ -11,10 +11,10 @@ public class Account {
     private long cpf;
     private Date openingDate;
     private double balance;
-    private boolean active;
+    private String active;
     private String typeAccount;
     
-    public Account(long agency, String holder, long cpf, Date openingDate, double balance, boolean active,
+    public Account(long agency, String holder, long cpf, Date openingDate, double balance, String active,
             String typeAccount) {
         this.id = Math.abs(new Random().nextLong());
         this.agency = agency;
@@ -54,7 +54,7 @@ public class Account {
         return balance;
     }
 
-    public boolean isActive() {
+    public String isActive() {
         return active;
     }
 
