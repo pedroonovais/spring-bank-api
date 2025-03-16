@@ -1,7 +1,9 @@
 package com.bank.spring_bank_api.controller;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,14 +15,13 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.bank.spring_bank_api.dto.DepositRequest;
+import com.bank.spring_bank_api.dto.TransactionRequest;
 import com.bank.spring_bank_api.model.Account;
 
 @RestController
@@ -35,7 +36,6 @@ public class AccountController {
         return repository;
     }
 
-    // Verificar o porque ele não está retornando o campo active na resposta
     @PostMapping
     public ResponseEntity<Account> create (@RequestBody Account account) {
         log.info("Criando uma nova conta " + account);        
@@ -47,6 +47,7 @@ public class AccountController {
     @GetMapping("{id}")
     public Account get(@PathVariable long id){
         log.info("Buscando conta " + id);
+        System.out.println(getAccount(id).isActive());
         return getAccount(id);
     }
 
@@ -62,7 +63,7 @@ public class AccountController {
         log.info("Alterando status da conta para inativa " + id);
         
         var account = getAccount(id);
-        account.setActive("n");
+        account.setActive('n');
     }
 
     @PutMapping("{id}")
@@ -77,16 +78,30 @@ public class AccountController {
     }
 
     @PatchMapping("deposit")
-    public Account deposit(@RequestBody DepositRequest depositInfo) {
-        log.info("Depositando valor R$" + String.valueOf(depositInfo.getValue()) + " na conta " + depositInfo.getId());
-
+    public Account deposit(@RequestBody TransactionRequest depositInfo) {
         var account = getAccount(depositInfo.getId());
-
+        
         if (depositInfo.getValue() <= 0){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O valor do deposito deve ser maior que 0");
         }
 
+        log.info("Depositando valor R$" + String.valueOf(depositInfo.getValue()) + " na conta " + depositInfo.getId());
+
         account.setBalance(account.getBalance() + depositInfo.getValue());
+        return account;
+    }
+
+    @PatchMapping("withdrawal")
+    public Account withdrawal(@RequestBody TransactionRequest withdrawalInfo) {
+        var account = getAccount(withdrawalInfo.getId());
+
+        if (account.getBalance() < withdrawalInfo.getValue()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente");
+        }
+
+        log.info("Sacando valor R$" + String.valueOf(withdrawalInfo.getValue()) + " da conta " + withdrawalInfo.getId());
+
+        account.setBalance(account.getBalance() - withdrawalInfo.getValue());
         return account;
     }
 
@@ -108,24 +123,50 @@ public class AccountController {
                 );
     }
 
-    private void isValidAccount(Account account) {
-        if (account.getOpeningDate().after(new java.util.Date())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A data de abertura da conta nao pode ser no futuro");
-        }
-        if (account.getHolder() == null || account.getCpf() == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O nome do titular e o cpf nao podem ser nulos");
-        }
-        if (account.getBalance() < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O saldo nao pode ser negativo");
-        }
-        if (!account.getTypeAccount().equals("Corrente") && !account.getTypeAccount().equals("Poupanca") && !account.getTypeAccount().equals("Corrente")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O tipo da conta nao eh valido: " + account.getTypeAccount());
-        }
-        if (!account.isActive().equals("s") && !account.isActive().equals("n")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O campo conta ativa deve ser passado como 's' ou 'n'");
-        }
-        if (repository.stream().anyMatch(a -> a.getCpf() == account.getCpf())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CPF já cadastrado");
-        }        
+    public void isValidAccount(Account account) {
+        validateOpeningDate(account.getOpeningDate());
+        validateHolderAndCpf(account.getHolder(), account.getCpf());
+        validateBalance(account.getBalance());
+        validateAccountType(account.getTypeAccount());
+        validateAccountStatus(account.isActive());
+        validateUniqueCpf(account.getCpf());
     }
+
+    private void validateOpeningDate(Date openingDate) {
+        if (openingDate.after(new Date())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A data de abertura da conta não pode ser no futuro");
+        }
+    }
+
+    private void validateHolderAndCpf(String holder, long cpf) {
+        if (holder == null || cpf == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O nome do titular e o CPF não podem ser nulos");
+        }
+    }
+
+    private void validateBalance(double balance) {
+        if (balance < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O saldo não pode ser negativo");
+        }
+    }
+
+    private void validateAccountType(String typeAccount) {
+        Set<String> validTypes = Set.of("Corrente", "Poupanca");
+        if (!validTypes.contains(typeAccount)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O tipo da conta não é válido: " + typeAccount);
+        }
+    }
+
+    private void validateAccountStatus(char status) {
+        if (status != 's' && status != 'n') {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O campo conta ativa deve ser 's' ou 'n'");
+        } 
+    }
+
+    private void validateUniqueCpf(long cpf) {
+        if (repository.stream().anyMatch(a -> a.getCpf() == cpf)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CPF já cadastrado");
+        }
+    }
+
 }

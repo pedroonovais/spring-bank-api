@@ -3,6 +3,8 @@ package com.bank.spring_bank_api.model;
 import java.util.Date;
 import java.util.Random;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Account {
     
     private long id;
@@ -11,10 +13,11 @@ public class Account {
     private long cpf;
     private Date openingDate;
     private double balance;
-    private String active;
+    @JsonProperty("active")
+    private char active;
     private String typeAccount;
     
-    public Account(long agency, String holder, long cpf, Date openingDate, double balance, String active,
+    public Account(long agency, String holder, long cpf, Date openingDate, double balance, char active,
             String typeAccount) {
         this.id = Math.abs(new Random().nextLong());
         this.agency = agency;
@@ -58,11 +61,11 @@ public class Account {
         this.balance = balance;
     }
 
-    public String isActive() {
+    public char isActive() {
         return active;
     }
 
-    public void setActive(String active) {
+    public void setActive(char active) {
         this.active = active;
     }
 

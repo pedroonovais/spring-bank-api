@@ -1,6 +1,6 @@
 package com.bank.spring_bank_api.dto;
 
-public class DepositRequest {
+public class TransactionRequest {
     private long id;
     private double value;
     
