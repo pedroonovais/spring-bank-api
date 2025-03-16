@@ -168,7 +168,7 @@ public class AccountController {
     }
 
     private void validateAccountType(String typeAccount) {
-        Set<String> validTypes = Set.of("Corrente", "Poupanca");
+        Set<String> validTypes = Set.of("Corrente", "Poupanca", "Salario");
         if (!validTypes.contains(typeAccount)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O tipo da conta não é válido: " + typeAccount);
         }
