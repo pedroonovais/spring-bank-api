@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.bank.spring_bank_api.dto.PixRequest;
 import com.bank.spring_bank_api.dto.TransactionRequest;
 import com.bank.spring_bank_api.model.Account;
 
@@ -52,7 +53,7 @@ public class AccountController {
     }
 
     @GetMapping("cpf/{cpf}")
-    public Account getByCpf(@PathVariable long cpf){
+    public Account getByCpf(@PathVariable String cpf){
         log.info("Buscando conta " + cpf);
         return getAccountByCpf(cpf);
     }
@@ -105,6 +106,22 @@ public class AccountController {
         return account;
     }
 
+    @PostMapping("pix")
+    public Account pix(@RequestBody PixRequest pixInfo) {
+        var originAccount = getAccount(pixInfo.getOriginId());
+        var destinationAccount = getAccount(pixInfo.getDestinationId());
+
+        if (originAccount.getBalance() < pixInfo.getValue()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente");
+        }
+
+        log.info("Enviando valor R$" + String.valueOf(pixInfo.getValue()) + " da conta " + pixInfo.getOriginId() + " para a conta " + pixInfo.getDestinationId());
+
+        originAccount.setBalance(originAccount.getBalance() - pixInfo.getValue());
+        destinationAccount.setBalance(destinationAccount.getBalance() + pixInfo.getValue());
+        return originAccount;
+    }
+
     private Account getAccount(Long id) {
         return repository.stream()
                 .filter(c -> c.getId() == id)
@@ -114,12 +131,12 @@ public class AccountController {
                 );
     }
 
-    private Account getAccountByCpf(Long cpf) {
+    private Account getAccountByCpf(String cpf) {
         return repository.stream()
-                .filter(c -> c.getCpf() == cpf)
+                .filter(c -> c.getCpf().equals(cpf))
                 .findFirst()
                 .orElseThrow(
-                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta " + cpf + " nao encontrada")
+                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta com CPF " + cpf + " não encontrada")
                 );
     }
 
@@ -138,8 +155,8 @@ public class AccountController {
         }
     }
 
-    private void validateHolderAndCpf(String holder, long cpf) {
-        if (holder == null || cpf == 0) {
+    private void validateHolderAndCpf(String holder, String cpf) {
+        if (holder == null || cpf == "" || cpf == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O nome do titular e o CPF não podem ser nulos");
         }
     }
@@ -163,10 +180,10 @@ public class AccountController {
         } 
     }
 
-    private void validateUniqueCpf(long cpf) {
-        if (repository.stream().anyMatch(a -> a.getCpf() == cpf)) {
+    private void validateUniqueCpf(String cpf) {
+        if (repository.stream().anyMatch(a -> a.getCpf().equals(cpf))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CPF já cadastrado");
         }
-    }
+    }    
 
 }

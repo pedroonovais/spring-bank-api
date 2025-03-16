@@ -10,14 +10,14 @@ public class Account {
     private long id;
     private long agency;
     private String holder;
-    private long cpf;
+    private String cpf;
     private Date openingDate;
     private double balance;
     @JsonProperty("active")
     private char active;
     private String typeAccount;
     
-    public Account(long agency, String holder, long cpf, Date openingDate, double balance, char active,
+    public Account(long agency, String holder, String cpf, Date openingDate, double balance, char active,
             String typeAccount) {
         this.id = Math.abs(new Random().nextLong());
         this.agency = agency;
@@ -45,7 +45,7 @@ public class Account {
         return holder;
     }
 
-    public long getCpf() {
+    public String getCpf() {
         return cpf;
     }
 
